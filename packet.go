@@ -55,7 +55,7 @@ func NewPacket(m Message, t *tea.TEA) (p *Packet, err error) {
 
 func FormatDatagram(m Message, t *tea.TEA) (data []byte, err error) {
 	w := SelectWriter()
-	defer PutWriter(w)
+	defer w.put()
 	p := SelectPacket()
 	defer PutPacket(p)
 	for len(m.Dat) > 0 {
@@ -79,7 +79,7 @@ func FormatDatagram(m Message, t *tea.TEA) (data []byte, err error) {
 
 func ParseDatagram(data []byte, t *tea.TEA) (m Message, err error) {
 	w := SelectWriter()
-	defer PutWriter(w)
+	defer w.put()
 	p := SelectPacket()
 	defer PutPacket(p)
 	for len(data) > 0 {

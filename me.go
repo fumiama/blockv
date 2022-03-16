@@ -93,7 +93,7 @@ func (m *Me) Sign(digest []byte) ([]byte, error) {
 	return m.eccp.SignToASN1(digest)
 }
 
-func (m *Me) Verify(pubk, digest, signature []byte) bool {
+func Verify(pubk, digest, signature []byte) bool {
 	p, err := ecc.ParsePublicKey(elliptic.P224(), pubk)
 	if err != nil {
 		return false

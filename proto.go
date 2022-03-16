@@ -27,18 +27,18 @@ type Protocol interface {
 }
 
 var (
-	protos   = map[ProtoType]Protocol{}
-	protosmu sync.Mutex
+	prototypes = map[ProtoType]Protocol{}
+	protosmu   sync.RWMutex
 )
 
 func RegisterProtocol(p Protocol) error {
 	protosmu.Lock()
 	defer protosmu.Unlock()
 	typ := p.Type()
-	pp, ok := protos[typ]
+	pp, ok := prototypes[typ]
 	if ok {
 		return errors.New("type " + strconv.Itoa(int(typ)) + " has been occupied by " + pp.String())
 	}
-	protos[typ] = p
+	prototypes[typ] = p
 	return nil
 }

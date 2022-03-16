@@ -59,5 +59,6 @@ func TestSign(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Log(len(sig))
-	assert.Equal(t, true, m.Verify(m.pubk[:], md[:], sig))
+	assert.Equal(t, true, Verify(m.pubk[:], md[:], sig))
+	t.Fail()
 }
