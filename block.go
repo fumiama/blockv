@@ -33,9 +33,21 @@ func NewBlock(protos ...Protocol) (b *Block, err error) {
 			return
 		}
 	}
-	b = new(Block)
+	b = SelectBlock()
 	b.dat = make([]byte, w.Len())
 	copy(b.dat, w.Bytes())
+	return
+}
+
+func ParseBlock(data []byte) (b *Block, err error) {
+	if len(data) <= 57+1+64 {
+		err = errors.New("data too short")
+		return
+	}
+	b = SelectBlock()
+	raw := (*[57 + 1 + 64]byte)(unsafe.Pointer(&b))
+	copy(raw[:], data)
+	b.dat = data[57+1+64:]
 	return
 }
 

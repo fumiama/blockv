@@ -8,7 +8,7 @@ import (
 )
 
 func TestKeygen(t *testing.T) {
-	m, err := NewMe("0.0.0.0:8000", "", "")
+	m, err := NewMe("0.0.0.0:8000", "", "", "pwd")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -24,7 +24,7 @@ func TestKeygen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m, err = NewMe("0.0.0.0:8000", pubkey, privkey)
+	m, err = NewMe("0.0.0.0:8000", pubkey, privkey, "pwd")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,7 +45,7 @@ func TestKeygen(t *testing.T) {
 }
 
 func TestSign(t *testing.T) {
-	m, err := NewMe("0.0.0.0:8000", "", "")
+	m, err := NewMe("0.0.0.0:8000", "", "", "pwd")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,5 +60,4 @@ func TestSign(t *testing.T) {
 	}
 	t.Log(len(sig))
 	assert.Equal(t, true, Verify(m.pubk[:], md[:], sig))
-	t.Fail()
 }

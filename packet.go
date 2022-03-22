@@ -10,12 +10,13 @@ import (
 )
 
 const (
-	PKTTYP_NIL = iota // get value (a block) by key
+	PKTTYP_NIL = iota // raw data
 	PKTTYP_GET        // get value (a block) by key
-	PKTTYP_CAT        // catch all blocks
-	PKTTYP_LST        // list all peers
 	PKTTYP_SET        // set value (a block) of key
 	PKTTYP_DEL        // del value (a block) of key
+	PKTTYP_LST        // list all peers
+	PKTTYP_ERQ        // echo request
+	PKTTYP_ERP        // echo reply
 )
 
 const (

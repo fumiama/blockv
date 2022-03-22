@@ -12,7 +12,7 @@ func TestBlock(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m, err := NewMe("0.0.0.0:8000", "", "")
+	m, err := NewMe("0.0.0.0:8000", "", "", "pwd")
 	if err != nil {
 		t.Fatal(err)
 	}

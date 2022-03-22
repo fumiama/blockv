@@ -49,3 +49,20 @@ func PutPacket(p *Packet) {
 	p.Dat = nil
 	packetPool.Put(p)
 }
+
+var blockPool = sync.Pool{
+	New: func() interface{} {
+		return new(Block)
+	},
+}
+
+// SelectBlock 从池中取出一个 Block
+func SelectBlock() *Block {
+	return blockPool.Get().(*Block)
+}
+
+// PutBlock 将 Block 放回池中
+func PutBlock(b *Block) {
+	b.dat = nil
+	blockPool.Put(b)
+}
