@@ -167,15 +167,17 @@ func (m *Me) Listen() {
 			m.peersmu.Unlock()
 			peer = &p
 		}
-		switch ms.Typ {
-		case PKTTYP_NIL:
-		case PKTTYP_GET:
-		case PKTTYP_SET:
-		case PKTTYP_DEL:
-		case PKTTYP_LST:
-		case PKTTYP_ERQ:
-			_ = peer.Send(Message{Typ: PKTTYP_ERP, Dat: ms.Dat})
-		case PKTTYP_ERP:
-		}
+		go func() {
+			switch ms.Typ {
+			case PKTTYP_NIL:
+			case PKTTYP_GET:
+			case PKTTYP_SET:
+			case PKTTYP_DEL:
+			case PKTTYP_LST:
+			case PKTTYP_ERQ:
+				_ = peer.Send(Message{Typ: PKTTYP_ERP, Dat: ms.Dat})
+			case PKTTYP_ERP:
+			}
+		}()
 	}
 }
