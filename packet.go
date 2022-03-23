@@ -16,7 +16,6 @@ const (
 	PKTTYP_DEL        // del value (a block) of key
 	PKTTYP_LST        // list all peers
 	PKTTYP_ERQ        // echo request
-	PKTTYP_ERP        // echo reply
 )
 
 const (

@@ -1,6 +1,7 @@
 package blockv
 
 import (
+	"bytes"
 	"crypto/md5"
 	"errors"
 	"io"
@@ -19,6 +20,7 @@ type Block struct {
 	sln uint8    // signature len
 	sgn [64]byte // signature of md5 digest of previous block's 255 bytes data + this block's 255 bytes data (this block's sgn is all zero in calc)
 	dat []byte   // block contents
+	pro []Protocol
 }
 
 func NewBlock(protos ...Protocol) (b *Block, err error) {
@@ -28,6 +30,10 @@ func NewBlock(protos ...Protocol) (b *Block, err error) {
 	w := SelectWriter()
 	defer w.put()
 	for _, p := range protos {
+		err = w.WriteByte(byte(p.Type()))
+		if err != nil {
+			return
+		}
 		_, err = io.Copy(w, p)
 		if err != nil {
 			return
@@ -45,9 +51,28 @@ func ParseBlock(data []byte) (b *Block, err error) {
 		return
 	}
 	b = SelectBlock()
-	raw := (*[57 + 1 + 64]byte)(unsafe.Pointer(&b))
+	raw := (*[57 + 1 + 64]byte)(unsafe.Pointer(b))
 	copy(raw[:], data)
 	b.dat = data[57+1+64:]
+	protosmu.RLock()
+	defer protosmu.RUnlock()
+	r := bytes.NewReader(data[57+1+64:])
+	for r.Len() > 0 {
+		typ, err := r.ReadByte()
+		if err != nil {
+			return nil, err
+		}
+		p, ok := prototypes[ProtoType(typ)]
+		if !ok {
+			return nil, errors.New("unknown protocol")
+		}
+		pro := p.New()
+		_, err = io.Copy(pro, r)
+		if err != nil {
+			return nil, err
+		}
+		b.pro = append(b.pro, pro)
+	}
 	return
 }
 

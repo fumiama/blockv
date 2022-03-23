@@ -10,6 +10,11 @@ const (
 	PROTONAME_KV = "kv"
 )
 
+const (
+	KV_OP_SET = iota
+	KV_OP_DEL
+)
+
 func init() {
 	err := RegisterProtocol(&KV{})
 	if err != nil {
@@ -18,9 +23,10 @@ func init() {
 }
 
 type KV struct {
-	Key   string
-	Value string
-	iseof bool
+	Operation uint8
+	Key       string
+	Value     string // Value will store the reason of del on KV_OP_DEL
+	iseof     bool
 	Protocol
 }
 
@@ -29,6 +35,8 @@ func (kv *KV) Write(p []byte) (n int, err error) {
 		err = io.EOF
 		return
 	}
+	kv.Operation = p[0]
+	p = p[1:]
 	kl := p[0]
 	if int(kl)+1 > len(p) {
 		err = errors.New("write too short")
@@ -42,7 +50,7 @@ func (kv *KV) Write(p []byte) (n int, err error) {
 	kv.Key = string(p[1 : int(kl)+1])
 	kv.Value = string(p[int(kl)+2 : int(kl)+2+int(vl)])
 	kv.iseof = true
-	return int(kl) + 2 + int(vl), nil
+	return 1 + int(kl) + 2 + int(vl), nil
 }
 
 func (kv *KV) Read(p []byte) (n int, err error) {
@@ -54,16 +62,17 @@ func (kv *KV) Read(p []byte) (n int, err error) {
 		err = errors.New("read buffer too short")
 		return
 	}
-	p[0] = uint8(len(kv.Key))
-	copy(p[1:], kv.Key)
-	p[1+len(kv.Key)] = uint8(len(kv.Value))
-	copy(p[1+len(kv.Key)+1:], kv.Value)
+	p[0] = kv.Operation
+	p[1] = uint8(len(kv.Key))
+	copy(p[2:], kv.Key)
+	p[2+len(kv.Key)] = uint8(len(kv.Value))
+	copy(p[2+len(kv.Key)+1:], kv.Value)
 	kv.iseof = true
 	return kv.Len(), nil
 }
 
 func (kv *KV) Len() int {
-	return 1 + len(kv.Key) + 1 + len(kv.Value)
+	return 1 + 1 + len(kv.Key) + 1 + len(kv.Value)
 }
 
 func (*KV) String() string {
@@ -76,4 +85,8 @@ func (kv *KV) Type() ProtoType {
 
 func (kv *KV) Reset() {
 	kv.iseof = false
+}
+
+func (kv *KV) New() Protocol {
+	return new(KV)
 }

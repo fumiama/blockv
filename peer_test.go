@@ -24,11 +24,11 @@ func TestListen(t *testing.T) {
 		data := make([]byte, 16)
 		ep, err := net.ListenUDP("udp", raddr)
 		if err != nil {
-			t.Fatal(err)
+			panic(err)
 		}
 		n, err := ep.Read(data)
 		if err != nil {
-			t.Fatal(err)
+			panic(err)
 		}
 		assert.Equal(t, "hello world!", base14.BytesToString(data[:n]))
 		wg.Done()
@@ -47,7 +47,7 @@ func TestListen(t *testing.T) {
 }
 
 func TestEcho(t *testing.T) {
-	m1, err := NewMe("127.0.0.1:8000", "", "", "pwd")
+	m1, err := NewMe("test", "127.0.0.1:8000", "", "", "pwd", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,6 +68,6 @@ func TestEcho(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, uint8(PKTTYP_ERP), rep.Typ)
+	assert.Equal(t, uint8(PKTTYP_NIL), rep.Typ)
 	assert.Equal(t, "hello world!", string(rep.Dat))
 }

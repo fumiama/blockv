@@ -8,7 +8,7 @@ import (
 )
 
 func TestKeygen(t *testing.T) {
-	m, err := NewMe("0.0.0.0:8000", "", "", "pwd")
+	m, err := NewMe("test", "0.0.0.0:8000", "", "", "pwd", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -16,15 +16,9 @@ func TestKeygen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	pubkey, err := m.PublicKey() // 57 bytes
-	if err != nil {
-		t.Fatal(err)
-	}
-	privkey, err := m.PrivateKey() // 28 bytes
-	if err != nil {
-		t.Fatal(err)
-	}
-	m, err = NewMe("0.0.0.0:8000", pubkey, privkey, "pwd")
+	pubkey := m.PublicKey()   // 57 bytes
+	privkey := m.PrivateKey() // 28 bytes
+	m, err = NewMe("test", "0.0.0.0:8000", pubkey, privkey, "pwd", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,20 +26,14 @@ func TestKeygen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mpub, err := m.PublicKey()
-	if err != nil {
-		t.Fatal(err)
-	}
+	mpub := m.PublicKey()
 	assert.Equal(t, pubkey, mpub)
-	mpriv, err := m.PrivateKey()
-	if err != nil {
-		t.Fatal(err)
-	}
+	mpriv := m.PrivateKey()
 	assert.Equal(t, privkey, mpriv)
 }
 
 func TestSign(t *testing.T) {
-	m, err := NewMe("0.0.0.0:8000", "", "", "pwd")
+	m, err := NewMe("test", "0.0.0.0:8000", "", "", "pwd", "")
 	if err != nil {
 		t.Fatal(err)
 	}

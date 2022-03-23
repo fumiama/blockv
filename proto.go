@@ -24,6 +24,8 @@ type Protocol interface {
 	fmt.Stringer
 	// protocol type
 	Type() ProtoType
+	// new self instance
+	New() Protocol
 }
 
 var (

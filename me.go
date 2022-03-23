@@ -3,6 +3,7 @@ package blockv
 import (
 	"bufio"
 	"crypto/elliptic"
+	"encoding/json"
 	"math/big"
 	"net"
 	"os"
@@ -24,13 +25,18 @@ type Me struct {
 	teaks   string
 	peers   map[string]*Peer
 	peersmu sync.RWMutex
+	storage *Storage
 }
 
 // NewMe addr such as 0.0.0.0:8000
-func NewMe(addr, pubkey, privkey, teakey string) (m *Me, err error) {
+func NewMe(storagepath, addr, pubkey, privkey, teakey, peers string) (m *Me, err error) {
 	m = new(Me)
+	m.storage, err = NewStorage(storagepath)
+	if err != nil {
+		return nil, err
+	}
 	if pubkey != "" && privkey != "" {
-		b, err := base14.UTF82utf16be(base14.StringToBytes(pubkey + PUB_KEY_TAIL))
+		b, err := base14.UTF82UTF16BE(base14.StringToBytes(pubkey + PUB_KEY_TAIL))
 		if err != nil {
 			return nil, err
 		}
@@ -38,7 +44,7 @@ func NewMe(addr, pubkey, privkey, teakey string) (m *Me, err error) {
 		if err != nil {
 			return nil, err
 		}
-		b, err = base14.UTF82utf16be(base14.StringToBytes(privkey))
+		b, err = base14.UTF82UTF16BE(base14.StringToBytes(privkey))
 		if err != nil {
 			return nil, err
 		}
@@ -56,6 +62,12 @@ func NewMe(addr, pubkey, privkey, teakey string) (m *Me, err error) {
 	m.teak = tea.NewTeaCipher(base14.StringToBytes(teakey))
 	m.teaks = teakey
 	m.peers = make(map[string]*Peer)
+	if peers != "" {
+		err = json.Unmarshal(base14.StringToBytes(peers), &m.peers)
+		if err != nil {
+			panic(err)
+		}
+	}
 	laddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
 		panic(err)
@@ -66,13 +78,13 @@ func NewMe(addr, pubkey, privkey, teakey string) (m *Me, err error) {
 }
 
 // LoadMe loads config from path
-func LoadMe(path string) (*Me, error) {
-	f, err := os.Open(path)
+func LoadMe(storagepath, configpath string) (*Me, error) {
+	f, err := os.Open(configpath)
 	if err != nil {
 		return nil, err
 	}
 	s := bufio.NewScanner(f)
-	var addr, pubkey, privkey, teakey string
+	var addr, pubkey, privkey, teakey, peers string
 	if s.Scan() {
 		addr = s.Text()
 	}
@@ -85,25 +97,20 @@ func LoadMe(path string) (*Me, error) {
 	if s.Scan() {
 		teakey = s.Text()
 	}
+	if s.Scan() {
+		peers = s.Text()
+
+	}
 	_ = f.Close()
-	return NewMe(addr, pubkey, privkey, teakey)
+	return NewMe(storagepath, addr, pubkey, privkey, teakey, peers)
 }
 
-func (m *Me) PrivateKey() (string, error) {
-	b, err := base14.UTF16be2utf8(base14.Encode(m.privk[:]))
-	if err != nil {
-		return "", err
-	}
-	return base14.BytesToString(b), nil
+func (m *Me) PrivateKey() string {
+	return base14.EncodeString(base14.BytesToString(m.privk[:]))
 }
 
-func (m *Me) PublicKey() (string, error) {
-	b, err := base14.UTF16be2utf8(base14.Encode(m.pubk[:]))
-	if err != nil {
-		return "", err
-	}
-	b = b[:len(b)-3]
-	return base14.BytesToString(b), nil
+func (m *Me) PublicKey() string {
+	return base14.EncodeString(base14.BytesToString(m.pubk[:]))[:99]
 }
 
 func (m *Me) Sign(digest []byte) ([]byte, error) {
@@ -124,14 +131,8 @@ func (m *Me) Close() error {
 
 // Save config to path
 func (m *Me) Save(path string) error {
-	pub, err := m.PublicKey()
-	if err != nil {
-		return err
-	}
-	priv, err := m.PrivateKey()
-	if err != nil {
-		return err
-	}
+	pub := m.PublicKey()
+	priv := m.PrivateKey()
 	f, err := os.Create(path)
 	if err != nil {
 		return err
@@ -143,6 +144,8 @@ func (m *Me) Save(path string) error {
 	f.WriteString(priv)
 	f.WriteString("\n")
 	f.WriteString(m.teaks)
+	f.WriteString("\n")
+	json.NewEncoder(f).Encode(&m.peers)
 	return f.Close()
 }
 
@@ -171,12 +174,17 @@ func (m *Me) Listen() {
 			switch ms.Typ {
 			case PKTTYP_NIL:
 			case PKTTYP_GET:
+				key := base14.BytesToString(ms.Dat)
+				v, err := m.storage.Get(key)
+				if err != nil {
+					return
+				}
+				_ = peer.Send(Message{Typ: PKTTYP_NIL, Dat: base14.StringToBytes(v)})
 			case PKTTYP_SET:
 			case PKTTYP_DEL:
 			case PKTTYP_LST:
 			case PKTTYP_ERQ:
-				_ = peer.Send(Message{Typ: PKTTYP_ERP, Dat: ms.Dat})
-			case PKTTYP_ERP:
+				_ = peer.Send(Message{Typ: PKTTYP_NIL, Dat: ms.Dat})
 			}
 		}()
 	}
